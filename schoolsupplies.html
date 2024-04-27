@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>School Supplies Donation Requests</title>
+    <style>
+        /* Define your custom color palette */
+        :root {
+            --navy-blue: #001f3f; /* Navy blue */
+            --blue-grotto: #0074D9; /* Blue grotto */
+            --blue-green: #39CCCC; /* Blue green */
+            --baby-blue: #7FDBFF; /* Baby blue */
+            --light-grey: #f0f0f0; /* Light grey for subtle background */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+            padding: 20px;
+            margin: 0;
+            background-color: var(--light-grey);
+        }
+
+        h1 {
+            color: var(--navy-blue);
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .filters {
+            margin-bottom: 20px;
+            text-align: center; /* Center-align filter section */
+        }
+
+        .filters label {
+            margin-right: 10px;
+            font-weight: bold;
+            color: var(--navy-blue);
+        }
+
+        .filters select {
+            padding: 10px;
+            border: 1px solid var(--blue-grotto);
+            background-color: white;
+            color: var(--navy-blue);
+            border-radius: 5px; /* Rounded corners */
+            transition: all 0.3s ease; /* Smooth transitions */
+        }
+
+        .filters select:hover {
+            border-color: var(--blue-green); /* Change border color on hover */
+        }
+
+        .donation-list {
+            list-style: none;
+            padding: 0;
+            max-width: 800px;
+            margin: 0 auto; /* Center-align the list */
+        }
+
+        .donation-list li {
+            padding: 15px;
+            margin: 15px 0;
+            background-color: white;
+            border: 1px solid var(--blue-green);
+            box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px; /* Rounded corners */
+            transition: all 0.3s ease;
+        }
+
+        .donation-list li:hover {
+            transform: scale(1.03); /* Slight zoom on hover */
+            box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.15); /* Enhance shadow on hover */
+            cursor: pointer; /* Change cursor on hover */
+        }
+
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 2px solid var(--blue-grotto);
+            border-radius: 10px;
+            box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.3); /* Add shadow for pop-up */
+            z-index: 1000; /* Bring to front */
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--blue-green);
+        }
+
+        .modal-close {
+            font-size: 1.2em;
+            cursor: pointer; /* Make the 'X' clickable */
+            color: var(--navy-blue);
+        }
+
+        .modal-body {
+            padding: 10px 0;
+        }
+
+        .overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+            z-index: 999; /* Below the modal */
+        }
+
+        /* Donation list styles */
+        .donation-list li strong {
+            color: var(--navy-blue);
+            font-size: 1.2em; /* Slightly larger font for emphasis */
+        }
+
+        .donation-list li .category {
+            font-size: 0.9em;
+            color: var(--blue-grotto);
+        }
+    </style>
+</head>
+<body>
+
+<h1>School Supplies Donation Requests</h1>
+
+<div class="filters">
+    <label for="filter-category">Filter by Category:</label>
+    <select id="filter-category" onchange="filterDonations()">
+        <option value="all">All</option>
+        <option value="books">Books</option>
+        <option value="stationery">Stationery</option>
+        <option value="electronics">Electronics</option>
+    </select>
+</div>
+
+<ul class="donation-list" id="donation-list">
+    <!-- Donation requests will be dynamically rendered here -->
+</ul>
+
+<div class="overlay" id="modal-overlay" onclick="closeModal()"></div>
+<div class="modal" id="donation-modal">
+    <div class="modal-header">
+        <h2 id="modal-title">Item Details</h2>
+        <span class="modal-close" onclick="closeModal()">&#x2715;</span> <!-- Close button -->
+    </div>
+    <div class="modal-body" id="modal-body">
+        <!-- Item details will be displayed here -->
+    </div>
+    <div class="modal-footer">
+        <label for="donate-quantity">Quantity to Donate:</label>
+        <input type="number" id="donate-quantity" min="1" value="1" style="padding: 5px; border-radius: 5px; border: 1px solid var(--blue-grotto);">
+        <button onclick="submitDonation()" style="background: var(--blue-grotto); color: white; padding: 10px; border-radius: 5px; border: none;">Donate</button>
+    </div>
+</div>
+
+<script>
+    const donationRequests = [
+        { id: 1, category: 'books', description: 'Math textbooks for high school students' },
+        { id: 2, category: 'stationery', description: 'Pens, pencils, and erasers for elementary schools' },
+        { id: 3, category: 'electronics', description: 'Laptops for a computer science class' },
+        { id: 4, category: 'books', description: 'Literature books for middle school' },
+        { id: 5, category: 'stationery', description: 'Notebooks and paper for high school' },
+    ];
+
+    let currentRequest = null; // Holds the current donation request being viewed
+
+    function renderDonations(donations) {
+        const donationList = document.getElementById('donation-list');
+        donationList.innerHTML = ''; // Clear existing content
+
+        donations.forEach(request => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <strong>${request.description}</strong>
+                <div class="category">Category: ${request.category}</div>
+            `;
+            listItem.onclick = () => viewRequestDetails(request); // Set onclick event to view details
+            donationList.appendChild(listItem);
+        });
+    }
+
+    function viewRequestDetails(request) {
+        currentRequest = request; // Set the current request
+        document.getElementById('modal-title').textContent = 'Item Details';
+        document.getElementById('modal-body').innerHTML = `
+            <p><strong>Description:</strong> ${request.description}</p>
+            <p><strong>Category:</strong> ${request.category}</p>
+            <p><strong>Requested Quantity:</strong> 100</p> <!-- Example quantity -->
+        `;
+        openModal();
+    }
+
+    function openModal() {
+        document.getElementById('modal-overlay').style.display = 'block';
+        document.getElementById('donation-modal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('donation-modal').style.display = 'none';
+    }
+
+    function filterDonations() {
+        const filterCategory = document.getElementById('filter-category').value;
+        const filteredRequests = donationRequests.filter(request => {
+            return filterCategory === 'all' || request.category === filterCategory;
+        });
+        renderDonations(filteredRequests);
+    }
+
+    function submitDonation() {
+        const quantity = parseInt(document.getElementById('donate-quantity').value, 10);
+        alert(`You have chosen to donate ${quantity} units to support "${currentRequest.description}".`);
+        closeModal(); // Close the modal after submission
+    }
+
+    // Initial render with all donations
+    renderDonations(donationRequests);
+</script>
+
+</body>
+</html>

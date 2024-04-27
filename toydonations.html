@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Toy Donation Requests</title>
+    <style>
+        /* Define custom color palette */
+        :root {
+            --navy-blue: #001f3f; /* Navy blue */
+            --blue-grotto: #0074D9; /* Blue grotto */
+            --blue-green: #39CCCC; /* Blue green */
+            --baby-blue: #7FDBFF; /* Baby blue */
+            --light-grey: #f0f0f0; /* Light grey for background */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background-color: var(--light-grey);
+        }
+
+        h1 {
+            color: var(--navy-blue);
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .filters {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filters label {
+            font-weight: bold;
+            color: var(--navy-blue);
+        }
+
+        .filters select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--blue-grotto);
+            background-color: white;
+            color: var(--navy-blue);
+            transition: all 0.3s ease;
+        }
+
+        .filters select:hover {
+            border-color: var(--blue-green);
+        }
+
+        .donation-list {
+            list-style: none;
+            padding: 0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .donation-list li {
+            padding: 15px;
+            margin: 15px 0;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .donation-list li:hover {
+            transform: scale(1.03);
+            box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--blue-grotto);
+            z-index: 1000;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            font-size: 1.2em;
+            cursor: pointer;
+            color: var(--navy-blue);
+        }
+
+        .modal-body {
+            padding: 10px;
+        }
+
+        .modal-footer {
+            padding-top: 10px;
+        }
+
+        .modal-footer input,
+        .modal-footer button {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid var(--blue-grotto);
+            background: white;
+        }
+
+        .modal-footer button {
+            background: var(--blue-grotto);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .modal-footer button:hover {
+            background: var(--blue-green);
+        }
+    </style>
+</head>
+<body>
+    <h1>Toy Donation Requests</h1>
+
+    <div class="filters">
+        <label for="filter-age">Filter by Age:</label>
+        <select id="filter-age" onchange="filterDonations()">
+            <option value="all">All</option>
+            <option value="0-2">0-2 years</option>
+            <option value="3-5">3-5 years</option>
+            <option value="6-10">6-10 years</option>
+            <option value="11+">11+ years</option>
+        </select>
+
+        <label for="filter-gender">Filter by Gender:</label>
+        <select id="filter-gender" onchange="filterDonations()">
+            <option value="all">All</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="unisex">Unisex</option>
+        </select>
+
+        <label for="filter-category">Filter by Category:</label>
+        <select id="filter-category" onchange="filterDonations()">
+            <option value="all">All</option>
+            <option value="board-games">Board Games</option>
+            <option value="stuffed-toys">Stuffed Toys</option>
+            <option value="dolls">Dolls</option>
+            <option value="sports">Sports</option>
+            <option value="cars">Cars</option>
+            <option value="outdoor">Outdoor</option>
+        </select>
+    </div>
+
+    <ul class="donation-list" id="donation-list">
+        <!-- Donation requests will be dynamically rendered here -->
+    </ul>
+
+    <div class="overlay" id="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal" id="donation-modal">
+        <div class="modal-header">
+            <span class="modal-close" onclick="closeModal()">&#x2715;</span> <!-- Close button -->
+        </div>
+        <div class="modal-body" id="modal-body">
+            <!-- Content will be inserted by JavaScript -->
+        </div>
+        <div class="modal-footer">
+            <label for="donate-quantity">Quantity to Donate:</label>
+            <input type="number" id="donate-quantity" min="1" value="1">
+            <button onclick="submitDonation()">Donate</button>
+        </div>
+    </div>
+
+    <script>
+        const toyDonationRequests = [
+            {
+                id: 1,
+                age: '3-5',
+                gender: 'unisex',
+                category: 'stuffed-toys',
+                description: 'Teddy bear with bowtie',
+                details: {
+                    type: 'Stuffed Toy',
+                    age: '3-5',
+                    gender: 'Unisex',
+                    category: 'Stuffed Toys',
+                    quantityRequired: 30
+                }
+            },
+            {
+                id: 2,
+                age: '6-10',
+                gender: 'male',
+                category: 'cars',
+                description: 'Remote control car',
+                details: {
+                    type: 'Car',
+                    age: '6-10',
+                    gender: 'Male',
+                    category: 'Cars',
+                    quantityRequired: 20
+                }
+            },
+            {
+                id: 3,
+                age: '11+',
+                gender: 'female',
+                category: 'dolls',
+                description: 'Barbie doll with accessories',
+                details: {
+                    type: 'Doll',
+                    age: '11+',
+                    gender: 'Female',
+                    category: 'Dolls',
+                    quantityRequired: 15
+                }
+            },
+            {
+                id: 4,
+                age: '3-5',
+                gender: 'unisex',
+                category: 'board-games',
+                description: 'Chutes and Ladders board game',
+                details: {
+                    type: 'Board Game',
+                    age: '3-5',
+                    gender: 'Unisex',
+                    category: 'Board Games',
+                    quantityRequired: 10
+                }
+            },
+        ];
+
+        function renderDonations(donations) {
+            const donationList = document.getElementById('donation-list');
+            donationList.innerHTML = ''; // Clear existing content
+
+            // Iterate through each toy donation request and add them to the list
+            for (let i = 0; i < donations.length; i++) {
+                const request = donations[i];
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <strong>${request.description}</strong>
+                    <div>Age: ${request.age}, Gender: ${request.gender}, Category: ${request.category}</div>
+                `;
+                listItem.onclick = () => viewRequestDetails(request); // Open modal to view details
+                donationList.appendChild(listItem);
+            }
+        }
+
+        function viewRequestDetails(request) {
+            currentRequest = request;
+
+            const details = request.details;
+
+            document.getElementById('modal-body').innerHTML = `
+                <p><strong>Type:</strong> ${details.type}</p>
+                <p><strong>Age:</strong> ${details.age}</p>
+                <p><strong>Gender:</strong> ${details.gender}</p>
+                <p><strong>Category:</strong> ${details.category}</p>
+                <p><strong>Required Quantity:</strong> ${details.quantityRequired}</p>
+            `;
+
+            openModal(); // Open the modal to show details
+        }
+
+        function openModal() {
+            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('donation-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('donation-modal').style.display = 'none';
+        }
+
+        function submitDonation() {
+            const quantity = parseInt(document.getElementById('donate-quantity').value, 10);
+            alert(`You have chosen to donate ${quantity} units to support "${currentRequest.description}".`);
+            closeModal(); // Close the modal after donation submission
+        }
+
+        function filterDonations() {
+            const ageFilter = document.getElementById('filter-age').value;
+            const genderFilter = document.getElementById('filter-gender').value;
+            const categoryFilter = document.getElementById('filter-category').value;
+
+            // Filter toy donation requests based on selected filters
+            const filteredRequests = toyDonationRequests.filter(request => {
+                const matchesAge = ageFilter === 'all' || request.age === ageFilter;
+                const matchesGender = genderFilter === 'all' || request.gender === genderFilter;
+                const matchesCategory = categoryFilter === 'all' || request.category === categoryFilter;
+                return matchesAge && matchesGender && matchesCategory;
+            });
+
+            renderDonations(filteredRequests); // Display the filtered donation requests
+        }
+
+        // Initial render with all toy donation requests
+        renderDonations(toyDonationRequests); // Populate the list of toy donation requests
+    </script>
+
+</body>
+</html>
+

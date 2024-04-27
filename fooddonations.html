@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Food Donation Requests</title>
+    <style>
+        /* Define custom color palette */
+        :root {
+            --navy-blue: #001f3f; /* Navy blue */
+            --blue-grotto: #0074D9; /* Blue grotto */
+            --blue-green: #39CCCC; /* Blue green */
+            --baby-blue: #7FDBFF; /* Baby blue */
+            --light-grey: #f0f0f0; /* Light grey for background */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background-color: var(--light-grey);
+        }
+
+        h1 {
+            color: var(--navy-blue);
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .filters {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filters label {
+            font-weight: bold;
+            color: var(--navy-blue);
+        }
+
+        .filters select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--blue-grotto);
+            background-color: white;
+            color: var(--navy-blue);
+            transition: all 0.3s ease;
+        }
+
+        .filters select:hover {
+            border-color: var(--blue-green);
+        }
+
+        .donation-list {
+            list-style: none;
+            padding: 0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .donation-list li {
+            padding: 15px;
+            margin: 15px 0;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .donation-list li:hover {
+            transform: scale(1.03);
+            box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--blue-grotto);
+            z-index: 1000;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            font-size: 1.2em;
+            cursor: pointer;
+            color: var(--navy-blue);
+        }
+
+        .modal-body {
+            padding: 10px;
+        }
+
+        .modal-footer {
+            padding-top: 10px;
+        }
+
+        .modal-footer input,
+        .modal-footer button {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid var(--blue-grotto);
+            background: white;
+        }
+
+        .modal-footer button {
+            background: var(--blue-grotto);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .modal-footer button:hover {
+            background: var(--blue-green);
+        }
+    </style>
+</head>
+<body>
+    <h1>Food Donation Requests</h1>
+
+    <div class="filters">
+        <label for="filter-category">Filter by Category:</label>
+        <select id="filter-category" onchange="filterDonations()">
+            <option value="all">All</option>
+            <option value="fruits-vegetables">Fruits & Vegetables</option>
+            <option value="canned-foods">Canned Foods</option>
+            <option value="fresh-meals">Fresh Meals</option>
+            <option value="baked-goods">Baked Goods</option>
+        </select>
+    </div>
+
+    <ul class="donation-list" id="donation-list">
+        <!-- Food donation requests will be dynamically rendered here -->
+    </ul>
+
+    <div class="overlay" id="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal" id="donation-modal">
+        <div class="modal-header">
+            <span class="modal-close" onclick="closeModal()">&#x2715;</span> <!-- Close button -->
+        </div>
+        <div class="modal-body" id="modal-body">
+            <!-- Content will be inserted by JavaScript -->
+        </div>
+        <div class="modal-footer">
+            <label for="donate-quantity">Quantity to Donate:</label>
+            <input type="number" id="donate-quantity" min="1" value="1"> <!-- Quantity selection -->
+            <button onclick="submitDonation()">Donate</button>
+        </div>
+    </div>
+
+    <script>
+        const foodDonationRequests = [
+            {
+                id: 1,
+                category: 'fruits-vegetables',
+                name: 'Apples and Oranges',
+                description: 'Fresh fruits for schools',
+                quantityRequired: 50,
+            },
+            {
+                id: 2,
+                category: 'canned-foods',
+                name: 'Canned Beans and Corn',
+                description: 'Canned goods for food drives',
+                quantityRequired: 100,
+            },
+            {
+                id: 3,
+                category: 'fresh-meals',
+                name: 'Prepared Meals',
+                description: 'Healthy meals for shelters',
+                quantityRequired: 20,
+            },
+            {
+                id: 4,
+                category: 'baked-goods',
+                name: 'Cookies and Muffins',
+                description: 'Baked goods for community events',
+                quantityRequired: 30,
+            },
+        ];
+
+        let currentRequest = null; // Holds the current food donation request being viewed
+
+        function renderDonations(donations) {
+            const donationList = document.getElementById('donation-list');
+            donationList.innerHTML = ''; // Clear existing content
+
+            // Loop through each food donation request to create a list item
+            for (let i = 0; i < donations.length; i++) {
+                const request = donations[i];
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <strong>${request.name}</strong>
+                    <div>${request.description}</div>
+                `;
+                listItem.onclick = () => viewRequestDetails(request); // Open modal to view details
+                donationList.appendChild(listItem);
+            }
+        }
+
+        function viewRequestDetails(request) {
+            currentRequest = request; // Set the current food donation request
+
+            document.getElementById('modal-body').innerHTML = `
+                <p><strong>Description:</strong> ${request.description}</p>
+                <p><strong>Required Quantity:</strong> ${request.quantityRequired}</p>
+            `;
+
+            openModal(); // Open the modal to show details
+        }
+
+        function openModal() {
+            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('donation-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('donation-modal').style.display = 'none';
+        }
+
+        function submitDonation() {
+            const quantity = parseInt(document.getElementById('donate-quantity').value, 10);
+            alert(`You have chosen to donate ${quantity} units to support "${currentRequest.description}".`);
+            closeModal(); // Close the modal after donation submission
+        }
+
+        function filterDonations() {
+            const filterCategory = document.getElementById('filter-category').value;
+            const filteredRequests = foodDonationRequests.filter(request => {
+                return filterCategory === 'all' || request.category === filterCategory;
+            });
+            renderDonations(filteredRequests); // Display the filtered donation requests
+        }
+
+        // Initial render with all food donation requests
+        renderDonations(foodDonationRequests); // Populate the list of food donation requests
+    </script>
+
+</body>
+</html>
+
